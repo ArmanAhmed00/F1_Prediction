@@ -1,0 +1,39 @@
+{
+  "selected_model": "A_ridge",
+  "criterion": "mean win log loss over walk-forward folds",
+  "test_rounds": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "residual_sigma": 4.6238307025007765,
+  "beats_baselines": false,
+  "baseline_comparison": {
+    "B1_pole_wins": true,
+    "B2_champ_leader_wins": true,
+    "B3_uniform": true,
+    "D_grid_baseline": false
+  },
+  "metrics": {
+    "n_folds": 6.0,
+    "win_log_loss": 0.11424373722907454,
+    "win_brier": 0.03383419333337121,
+    "podium_log_loss": 0.24175607102059238,
+    "podium_brier": 0.07736771587121212,
+    "top1_hit": 0.5,
+    "spearman_rho": 0.6725014116318464,
+    "mae_position": 3.402987467324897,
+    "p_actual_winner": 0.19566666666666666,
+    "sigma_test": 4.6238307025007765,
+    "sigma_cv": 4.39374870826158
+  },
+  "candidates_considered": [
+    "A_ridge",
+    "B_random_forest",
+    "C_gradient_boosting"
+  ],
+  "overall_best_including_baselines": "D_grid_baseline"
+}
