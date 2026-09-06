@@ -1,3 +1,39 @@
-cache/
+# --- Python ---
 __pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# --- Tool caches ---
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# --- macOS ---
+.DS_Store
+
+# --- FastF1's HTTP cache ---
+# ~190 MB, and every byte of it is refetchable. Do not delete it locally,
+# though: an existing cache is what makes re-running ingest.py near-instant,
+# and FastF1 rate-limits at 500 calls/hour.
+cache/
+
+# --- Ingested and derived data ---
+# Regenerable end to end:  src/ingest.py  ->  src/features.py
+# Consequence: a fresh clone has no data and must run the ingest before
+# anything else works. That is the trade being made for a ~23 MB repo.
+data/raw/
+data/processed/
+
+# --- Deliberately NOT ignored ---
+# data/manual/    the starting grids, typed in by hand from the official
+#                 classification. FastF1 only publishes GridPosition inside
+#                 race results, which do not exist before a race, so nothing
+#                 can regenerate these. Lose one and the prediction that used
+#                 it stops being reproducible.
+# predictions/    the locked forecasts. The whole point.
+# reports/        backtests, pre-registrations, post-mortems.
+
+# --- Streamlit ---
+.streamlit/secrets.toml
