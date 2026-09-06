@@ -25,6 +25,7 @@ cache/
 # anything else works. That is the trade being made for a ~23 MB repo.
 data/raw/
 data/processed/
+data/raw/_parts
 
 # --- Deliberately NOT ignored ---
 # data/manual/    the starting grids, typed in by hand from the official
