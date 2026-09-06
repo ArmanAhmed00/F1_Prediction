@@ -1,0 +1,23 @@
+driver_id,abbreviation,quali_position,grid_position,penalty_note
+gasly,GAS,1,1,
+russell,RUS,2,2,
+piastri,PIA,3,6,3-place grid drop for impeding Lawson in Q2
+leclerc,LEC,4,3,
+hamilton,HAM,5,4,
+max_verstappen,VER,6,5,
+antonelli,ANT,7,20,back of grid - power unit components outside allowance (reported as a 30-place penalty)
+colapinto,COL,8,7,
+norris,NOR,9,8,
+arvid_lindblad,LIN,10,9,
+bortoleto,BOR,11,10,
+bearman,BEA,12,11,
+hulkenberg,HUL,13,12,
+lawson,LAW,14,21,back of grid - power unit components outside allowance (reported as a 35-place penalty); sources disagree on LAW/ALB order at P21-P22 - formula1.com and motorsport.com put LAW P21
+sainz,SAI,15,13,
+ocon,OCO,16,14,
+tsunoda,TSU,17,15,
+albon,ALB,18,22,back of grid - power unit components outside allowance (reported as a 20-place penalty); sources disagree on LAW/ALB order at P21-P22 - crash.net and racingnews365 put ALB P21
+bottas,BOT,19,16,
+perez,PER,20,17,
+alonso,ALO,21,18,
+stroll,STR,22,19,

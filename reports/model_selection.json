@@ -1,15 +1,20 @@
 {
   "selected_model": "A_ridge",
-  "criterion": "mean win log loss over walk-forward folds",
+  "selection_frozen": true,
+  "frozen_at": "round 12 backtest, walk-forward folds 6-11",
+  "still_best_fitted_candidate": true,
+  "best_fitted_candidate_on_these_folds": "A_ridge",
+  "criterion": "mean win log loss over walk-forward folds (frozen: re-scored, not re-selected)",
   "test_rounds": [
     6,
     7,
     8,
     9,
     10,
-    11
+    11,
+    12
   ],
-  "residual_sigma": 4.6238307025007765,
+  "residual_sigma": 4.601022826997237,
   "beats_baselines": false,
   "baseline_comparison": {
     "B1_pole_wins": true,
@@ -18,17 +23,17 @@
     "D_grid_baseline": false
   },
   "metrics": {
-    "n_folds": 6.0,
-    "win_log_loss": 0.11424373722907454,
-    "win_brier": 0.03383419333337121,
-    "podium_log_loss": 0.24175607102059238,
-    "podium_brier": 0.07736771587121212,
-    "top1_hit": 0.5,
-    "spearman_rho": 0.6725014116318464,
-    "mae_position": 3.402987467324897,
-    "p_actual_winner": 0.19566666666666666,
-    "sigma_test": 4.6238307025007765,
-    "sigma_cv": 4.39374870826158
+    "n_folds": 7.0,
+    "win_log_loss": 0.11565856881473782,
+    "win_brier": 0.03425138077925325,
+    "podium_log_loss": 0.23728693263183784,
+    "podium_brier": 0.07572616805194805,
+    "top1_hit": 0.42857142857142855,
+    "spearman_rho": 0.6818585141566508,
+    "mae_position": 3.352212640127733,
+    "p_actual_winner": 0.19053571428571428,
+    "sigma_test": 4.601022826997237,
+    "sigma_cv": 4.3747018436506275
   },
   "candidates_considered": [
     "A_ridge",

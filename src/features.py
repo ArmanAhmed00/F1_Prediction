@@ -31,6 +31,7 @@ import pandas as pd
 
 BASE = Path(__file__).resolve().parents[1]
 PROCESSED = BASE / "data" / "processed"
+MANUAL = BASE / "data" / "manual"
 OUT_PATH = PROCESSED / "model_table.csv"
 
 sys.path.insert(0, str(BASE))
@@ -544,6 +545,127 @@ def add_sprint_features(table: pd.DataFrame) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------
+# Starting grid for a race that hasn't run
+# --------------------------------------------------------------------------
+# FastF1 only exposes GridPosition inside Race results, and those don't exist
+# until the race has been run. Qualifying order is the obvious stand-in and it
+# is simply wrong wherever a penalty applies - at Monza 2026 four drivers moved,
+# three of them by more than ten places. So an official grid, transcribed by
+# hand into data/manual/grid_R{round}.csv, takes precedence over quali order.
+GRID_COLUMNS = ("driver_id", "abbreviation", "quali_position", "grid_position", "penalty_note")
+
+
+def manual_grid_path(rnd: int) -> Path:
+    return MANUAL / f"grid_R{int(rnd)}.csv"
+
+
+def _display_path(path: Path) -> str:
+    """Repo-relative where possible. MANUAL is patchable, so it may not be."""
+    try:
+        return str(path.relative_to(BASE))
+    except ValueError:
+        return str(path)
+
+
+def load_manual_grid(rnd: int) -> pd.DataFrame | None:
+    """The hand-entered official grid for one round, or None if there isn't one.
+
+    Raises rather than warns on a malformed file. A half-filled grid is worse
+    than no grid at all: the fallback path at least announces itself, whereas a
+    file with three blank rows would quietly impute them to the field median.
+    """
+    path = manual_grid_path(rnd)
+    if not path.exists():
+        return None
+
+    grid = pd.read_csv(path)
+    missing_cols = [c for c in ("driver_id", "grid_position") if c not in grid.columns]
+    if missing_cols:
+        raise ValueError(f"{path.name} is missing required column(s) {missing_cols}")
+
+    grid = grid.loc[:, [c for c in GRID_COLUMNS if c in grid.columns]].copy()
+    grid["driver_id"] = grid["driver_id"].astype("string").str.strip()
+
+    blank = grid["grid_position"].isna()
+    if blank.any():
+        raise ValueError(
+            f"{path.name}: grid_position is empty for "
+            f"{grid.loc[blank, 'driver_id'].tolist()}. Fill every row in from the "
+            "official starting grid before building features."
+        )
+    grid["grid_position"] = grid["grid_position"].astype("float64")
+
+    dupes = grid["driver_id"][grid["driver_id"].duplicated()].tolist()
+    if dupes:
+        raise ValueError(f"{path.name}: duplicate driver_id rows {dupes}")
+    return grid
+
+
+def _assert_grid_permutation(positions: pd.Series, context: str) -> None:
+    """The grid must be 1..n exactly - no duplicates, no gaps, nobody missing."""
+    values = positions.to_numpy(dtype="float64")
+    n = values.size
+    nulls = int(np.isnan(values).sum())
+    assert not nulls, f"{context}: {nulls} driver(s) have no grid position"
+
+    expected = set(range(1, n + 1))
+    actual = sorted(int(v) for v in values)
+    assert (values == np.floor(values)).all(), f"{context}: non-integer grid positions {actual}"
+
+    duplicated = sorted({p for p in actual if actual.count(p) > 1})
+    assert not duplicated, f"{context}: duplicate grid positions {duplicated}"
+    assert set(actual) == expected, (
+        f"{context}: grid positions are not a permutation of 1..{n}. "
+        f"missing {sorted(expected - set(actual))}, unexpected {sorted(set(actual) - expected)}"
+    )
+
+
+def apply_prediction_grid(table: pd.DataFrame) -> pd.DataFrame:
+    """Fill grid_position on prediction rows, from the manual grid where present.
+
+    Runs before imputation, so a grid that came out of the manual file is never
+    flagged as imputed and never overwritten by a field median.
+    """
+    needs_grid = table["is_prediction"] & table["grid_position"].isna()
+    for rnd in sorted(table.loc[needs_grid, "round"].unique()):
+        rows = needs_grid & table["round"].eq(rnd)
+        grid = load_manual_grid(int(rnd))
+
+        if grid is None:
+            banner = "!" * 78
+            message = (
+                f"NO OFFICIAL GRID FOR ROUND {rnd}. grid_position is falling back to "
+                f"QUALIFYING ORDER.\nGrid penalties are NOT accounted for, and "
+                f"grid_position is the strongest single\nfeature in the model. Write "
+                f"{_display_path(manual_grid_path(int(rnd)))} from the published\n"
+                "starting grid and rebuild before locking any prediction."
+            )
+            print(f"\n{banner}\n{message}\n{banner}\n", file=sys.stderr)
+            warnings.warn(message, stacklevel=2)
+            table.loc[rows, "grid_position"] = table.loc[rows, "quali_position"]
+            source = "qualifying order (NO penalties applied)"
+        else:
+            entrants = set(table.loc[rows, "driver_id"].astype("string"))
+            listed = set(grid["driver_id"])
+            assert listed == entrants, (
+                f"round {rnd}: {manual_grid_path(int(rnd)).name} does not match the "
+                f"entry list. missing from the file: {sorted(entrants - listed)}; "
+                f"not entered in the round: {sorted(listed - entrants)}"
+            )
+            mapping = grid.set_index("driver_id")["grid_position"]
+            table.loc[rows, "grid_position"] = (
+                table.loc[rows, "driver_id"].astype("string").map(mapping).to_numpy()
+            )
+            source = f"{manual_grid_path(int(rnd)).name}"
+
+        _assert_grid_permutation(
+            table.loc[rows, "grid_position"], f"round {rnd} grid from {source}"
+        )
+        print(f"round {rnd}: grid_position taken from {source}", file=sys.stderr)
+    return table
+
+
+# --------------------------------------------------------------------------
 # Imputation
 # --------------------------------------------------------------------------
 def _expanding_median(table: pd.DataFrame, col: str) -> pd.Series:
@@ -683,18 +805,10 @@ def build_features(raw: dict[str, pd.DataFrame]) -> pd.DataFrame:
     table = add_championship(table)
     table = add_sprint_features(table)
 
-    # No official grid yet for prediction rows. Qualifying order is the best
-    # stand-in we have, and it's wrong anywhere a penalty applies.
-    predicted_grid = table["is_prediction"] & table["grid_position"].isna()
-    if predicted_grid.any():
-        rounds = sorted(table.loc[predicted_grid, "round"].unique())
-        warnings.warn(
-            f"grid_position for round(s) {rounds} is QUALIFYING ORDER, not the official "
-            "grid. Grid penalties are NOT reflected. Check the published starting grid "
-            "and correct these rows before locking any prediction.",
-            stacklevel=2,
-        )
-        table.loc[predicted_grid, "grid_position"] = table.loc[predicted_grid, "quali_position"]
+    # Prediction rows have no GridPosition - FastF1 only publishes it with the
+    # race result. Take the official grid where we have it, quali order (loudly)
+    # where we don't.
+    table = apply_prediction_grid(table)
 
     table = impute_features(table)
     validate(table)

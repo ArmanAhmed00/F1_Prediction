@@ -1,0 +1,2 @@
+round,label,generated_at_utc,model_name,predicted_winner,p_win,predicted_podium,git_commit_sha
+13,monza,2026-09-06T10:51:28+00:00,A_ridge,RUS,0.18405,RUS HAM LEC,572834671c1ad1f840dbe42281715d06d37d70f8

@@ -23,7 +23,9 @@ Three ways a leak can happen, and they fail differently:
       Scramble Q on a sprint weekend. Neither test above can see this one.
 
 Round 6 is a conventional weekend, round 9 a sprint weekend, so both session
-orderings get covered.
+orderings get covered. Round 12 (Zandvoort) is in as well: it was wet, had a
+lap-1 red flag, two VSC periods and six retirements, which is exactly the kind
+of round where a filter quietly changes what a feature sees.
 """
 
 from __future__ import annotations
@@ -40,11 +42,12 @@ sys.path.insert(0, str(BASE))
 
 from src.features import FEATURE_COLUMNS, build_features, load_raw_frames  # noqa: E402
 
-# Rounds under test: one conventional weekend, one sprint weekend.
-ROUNDS = [6, 9]
+# Rounds under test: one conventional weekend, two sprint weekends. Round 12 is
+# the newest completed race and the messiest one of the season.
+ROUNDS = [6, 9, 12]
 
 # Sprint weekends, where Qualifying runs after the Sprint.
-SPRINT_ROUNDS = [4, 9]
+SPRINT_ROUNDS = [4, 9, 12]
 
 # How the session turned out. None of this is known until the flag falls, so no
 # feature may depend on it. GridPosition and the Q times are left out on
